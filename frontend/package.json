@@ -23,9 +23,11 @@
     "@types/history": "4.7.2",
     "@types/jest": "^24.0.15",
     "@types/node": "12.6.2",
-    "@types/react": "16.8.23",
+
     "@types/react-copy-to-clipboard": "^4.2.6",
-    "@types/react-dom": "16.8.4",
+
+    "@types/react": "17.0.14",
+    "@types/react-dom": "17.0.14",
     "@types/react-redux": "7.1.1",
     "@types/react-router": "5.0.3",
     "@types/react-router-redux": "^5.0.18",
@@ -105,6 +107,10 @@
     "redux-actions": "^2.6.5",
     "redux-thunk": "^2.3.0",
     "sweetalert2": "^8.13.4"
+  },
+  "resolutions": {
+    "@types/react": "17.0.14",
+    "@types/react-dom": "17.0.14"
   },
   "jest": {
     "rootDir": "src",

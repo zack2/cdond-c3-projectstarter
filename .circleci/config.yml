@@ -9,7 +9,7 @@ commands:
           channel: C04CPS646NP
           template: basic_fail_1
 
-  destroy_environment:
+  destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       workflow_id:
@@ -187,7 +187,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy_environment:
+      - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   configure-infrastructure:
@@ -215,6 +215,7 @@ jobs:
 
 
 
+
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
@@ -222,7 +223,6 @@ jobs:
     steps:
       # Checkout code from git
       - checkout
-
       - attach_workspace:
           at: ~/
       - run:
@@ -262,6 +262,7 @@ jobs:
                 curl https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
             # exit 1
+
       - destroy-environment
 
 

@@ -274,33 +274,34 @@ jobs:
 
   deploy-frontend:
     docker:
+      # Docker image here that supports AWS CLI
       - image: circleci/node:13.8.0
     steps:
+      # Checkout code from git
       - checkout
-      - attach_workspace:
-          at: .
+
       - restore_cache:
-          keys:
-            - frontend-build
+          keys: [ frontend-build ]
+
+      - attach_workspace:
+          at: ~/
       - run:
-          name: Install dependencies
+          name: Install AWS CLI dependencies
           working_directory: /tmp
           command: |
-            sudo apt-get -y update
-            sudo apt-get -y install python3
-            sudo apt-get -y install awscli
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Get backend url
           command: |
-            cd frontend
-            touch .env
-            export BACKEND_IP=$(aws ec2 describe-instances \
-              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --output text)
+            # your code here
+            export BACKEND_IP=$(aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" > .env
-            cat .env
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
@@ -309,113 +310,109 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-
-
+            # your code here
       - persist_to_workspace:
           root: .
           paths:
             - frontend/dist
-      # Here's where you will add some code to rollback on failure
-      - destroy_environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
+      - destroy-environment
+      - revert-migrations
+      #  Here's where you will add some code to rollback on failure
 
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-backend:
     docker:
-      - image: python:3.9.0-alpine
+      - image: cimg/base:stable
     steps:
       - checkout
+      - run:
+          name: Install AWS CLI v2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - install_ansible
+      - install_nodejs
       - add_ssh_keys:
           fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
       - attach_workspace:
-          at: .
+          at: ~/
       - restore_cache:
-          keys:
-            - backend-build
+          keys: [ backend-deps ]
       - run:
-          name: "Install Dependencies"
-          working_directory: /tmp
-          command: |
-            apk add --update ansible curl rsync openssh nodejs npm
-            pip install awscli
-
-      - run:
-          name: Deploy backend
+          name: Install dependencies
           command: |
             cd backend
-            npm i
+            npm install
+      - run:
+          name: Package Backend
+          command: |
+            cd backend
             npm run build
+            tar -czf artifact.tar.gz dist/* package*
             cd ..
-            pwd
-            ls -lah
-            tar -czvf backend.tar.gz backend
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+      - run:
+          name: Deploy Backend
+          command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/*/.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS_DIR=./migrations/*.ts
             cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+      - destroy-environment
+      - revert-migrations
 
-      - destroy_environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
 
 
   smoke-test:
     docker:
+      # Lightweight Docker image
       - image: python:3.7-alpine3.11
     steps:
+      # Checkout code from git
       - checkout
-      - attach_workspace:
-          at: .
       - run:
           name: Install dependencies
           working_directory: /tmp
           command: |
-            apk --no-cache add curl
-            apk update
+            apk add --update curl nodejs npm
             pip install awscli
 
       - run:
-          name: test backend smoke test
+          name: Backend Smoke test
           command: |
-            URL="http://google.com/"
-            if curl -s --head ${URL} 
+            BACKEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text)
+            export API_URL=http://${BACKEND_IP}:3030
+            echo ${API_URL}
+            if curl -s $API_URL/api/status | grep "ok"
             then
-              return 0
+              exit 0
             else
-              return 1
+              exit 1
             fi
+
+
       - run:
           name: Frontend smoke test.
           command: |
-            cd frontend
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"            
-            echo ${URL} 
-            if curl -s ${URL} | grep "Welcome"
+            # URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.eu-central-1.amazonaws.com/index.html" 
+            # echo ${URL} 
+            # if curl -s --head ${URL} 
+            FRONTEND_WEBSITE=http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website.${AWS_DEFAULT_REGION}.amazonaws.com
+            if curl -s $FRONTEND_WEBSITE | grep "Welcome"      
             then
-              return 0
+                return 0
             else
-              return 1
+                return 1
             fi
-      - run:
-          name: Save Frontend S3 bucket URL
-          command: |
-            cd frontend
-            touch URL02.txt
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
-            echo ${URL} > URL02.txt
-            cat URL02.txt
-
-      - destroy_environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
-
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment
+      - revert-migrations
+      #  Here's  where you will add some code to rollback on failure
 
 workflows:
   default:

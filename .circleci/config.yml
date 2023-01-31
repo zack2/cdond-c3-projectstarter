@@ -9,6 +9,36 @@ commands:
           channel: C04CPS646NP
           template: basic_fail_1
 
+  install_awscli:
+    description: Install AWS ClI v2
+    steps:
+      - run:
+          name: Install AWS CLI v2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+
+  install_ansible:
+      description: Install Ansible
+      steps:
+        - run:
+            name: Install Ansible
+            command: |
+              sudo apt update
+              sudo apt install software-properties-common -y
+              sudo add-apt-repository --yes --update ppa:ansible/ansible
+              sudo apt install ansible -y
+
+  install_nodejs:
+      description: Install nodejs 13
+      steps:
+        - run:
+            name: Install nodejs 13
+            command: |
+              curl -fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+              sudo apt install -y nodejs
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
@@ -33,6 +63,7 @@ commands:
       #  Add parameter here
       workflow_id:
         type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Revert migrations
@@ -153,49 +184,49 @@ jobs:
 
   deploy-infrastructure:
     docker:
+      # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
-
     steps:
+      # Checkout code from git
       - checkout
-      - run:
-          name: Install tar and gzip library
-          command: |
-            yum install -y tar gzip
+      - run: yum -y install tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/backend.yml \
-              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
-              --tags project=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+            --template-file .circleci/files/backend.yml \
+            --tags project=backstruct \
+            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --region us-east-1 
+            
+               #   exit 1
       - run:
           name: Ensure front-end infrastructure exist
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=frontstruct \
+              --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7} \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" \
-              --tags project=udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+              --region us-east-1 
+              # exit 1
       - run:
           name: Add back-end ip to ansible inventory
           command: |
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
-              --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --output text >> ~/project/.circleci/ansible/inventory.txt
-            cat ~/project/.circleci/ansible/inventory.txt
-      - run:
-          name: "Echo EC2 instances"
-          command: |
-            echo "IP address:"
-            cat ~/project/.circleci/ansible/inventory.txt
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --output text >> ./.circleci/ansible/inventory.txt  
+            cat ./.circleci/ansible/inventory.txt  
+            # Your code here
+            # exit 1
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy-environment:
-          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment
+      # Here's where you will add some code to rollback on failure
 
   configure-infrastructure:
     docker:

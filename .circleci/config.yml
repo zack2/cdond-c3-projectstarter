@@ -24,27 +24,27 @@ commands:
             aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
 
-    revert-migrations:
-      description: Revert the last migration if successfully run in the current workflow.
-      parameters:
-        #  Add parameter here
-        workflow_id:
-          type: string
-      steps:
-        - run:
-            name: Revert migrations
-            # Add when this will run
-            when: on_fail
-            command: |
-              # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-              # SUCCESS=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
-              # --request GET https://api.memstash.io/values/DB_MIGRATION_<< parameters.workflow_id >>)
-              SUCCESS=$(curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_<< parameters.workflow_id >>)
-              if(( $SUCCESS==1 )); 
-              then
-              cd backend
-              npm run migrations:revert
-              fi
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      #  Add parameter here
+      workflow_id:
+        type: string
+    steps:
+      - run:
+          name: Revert migrations
+          # Add when this will run
+          when: on_fail
+          command: |
+            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+            # SUCCESS=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
+            # --request GET https://api.memstash.io/values/DB_MIGRATION_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_<< parameters.workflow_id >>)
+            if(( $SUCCESS==1 )); 
+            then
+            cd backend
+            npm run migrations:revert
+            fi
 
 
 jobs:
@@ -413,24 +413,24 @@ jobs:
 workflows:
   default:
     jobs:
-#      - build-frontend
-#      - build-backend
-#      - test-frontend:
-#          requires: [ build-frontend ]
-#      - test-backend:
-#          requires: [ build-backend ]
-#      - scan-backend:
-#          requires: [ build-backend ]
-#      - scan-frontend:
-#          requires: [ build-frontend ]
-#      - deploy-infrastructure:
-#          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
-#          filters:
-#            branches:
-#              only:
-#                - master
-#      - configure-infrastructure:
-#          requires: [ deploy-infrastructure ]
+      #      - build-frontend
+      #      - build-backend
+      #      - test-frontend:
+      #          requires: [ build-frontend ]
+      #      - test-backend:
+      #          requires: [ build-backend ]
+      #      - scan-backend:
+      #          requires: [ build-backend ]
+      #      - scan-frontend:
+      #          requires: [ build-frontend ]
+      #      - deploy-infrastructure:
+      #          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
+      #          filters:
+      #            branches:
+      #              only:
+      #                - master
+      #      - configure-infrastructure:
+      #          requires: [ deploy-infrastructure ]
       - run-migrations:
           requires: [ configure-infrastructure ]
 #      - deploy-frontend:

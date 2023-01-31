@@ -24,6 +24,27 @@ commands:
             aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
 
+    revert-migrations:
+      description: Revert the last migration if successfully run in the current workflow.
+      parameters:
+        #  Add parameter here
+        workflow_id:
+          type: string
+      steps:
+        - run:
+            name: Revert migrations
+            # Add when this will run
+            when: on_fail
+            command: |
+              # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+              # SUCCESS=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
+              # --request GET https://api.memstash.io/values/DB_MIGRATION_<< parameters.workflow_id >>)
+              SUCCESS=$(curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_<< parameters.workflow_id >>)
+              if(( $SUCCESS==1 )); 
+              then
+              cd backend
+              npm run migrations:revert
+              fi
 
 
 jobs:
@@ -196,48 +217,53 @@ jobs:
 
   run-migrations:
     docker:
+      # Docker image here that supports NodeJS
       - image: circleci/node:13.8.0
     steps:
+      # Checkout code from git
       - checkout
-      - restore_cache:
-          keys:
-            - backend-build
+
       - attach_workspace:
-          at: .
+          at: ~/
       - run:
-          name: "Install Dependencies"
+          name: Install AWS CLI dependencies
           working_directory: /tmp
           command: |
-            sudo apt-get -y update
-            sudo apt-get -y install python3
-            sudo apt-get -y install awscli
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - run:
           name: Run migrations
           command: |
             cd backend
-            npm cache clean --force
+            # npm install package_name             
+            # npx npm-check-updates
             npm install
-            touch migrations-${CIRCLE_WORKFLOW_ID:0:7}.txt
-            npm run migrations >> migrations-${CIRCLE_WORKFLOW_ID:0:7}.txt
-            cat migrations-${CIRCLE_WORKFLOW_ID:0:7}.txt
-
+            # npm run build
+            # npm run migrations
+            # npm fund
+            # npm audit fix --audit-level=critical --force
+            # cd /home/circleci/.npm/_logs
+            # npm install 2022-10-14T14_48_54_316Z-debug.log
+            npm install
+            npm run migrations > migrations_dump.txt
+            # Your code here
+            # exit 1
       - run:
           name: Send migration results to memstash
           command: |
-            cd backend        
-              if grep  "success" migrations-${CIRCLE_WORKFLOW_ID:0:7}.txt
+            # Your code here
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-              echo "DB migration was successful, will update kvdb..."
-              curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
-            else
-              echo "DB migration failed"
-              curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '0'
+            # If you are using memstash.io, generate the token "7933fe63-4687-4fa1-8426-aa25aa1730ec" on the website
+              #  curl -H "Content-Type: text/plain" -H "token: 7933fe63-4687-4fa1-8426-aa25aa1730ec" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
+            # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
+                curl https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-            echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
+            # exit 1
+      - destroy-environment
 
-      - destroy_environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-          when: on_fail
 
   deploy-frontend:
     docker:
@@ -387,26 +413,26 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-frontend
-      - build-backend
-      - test-frontend:
-          requires: [ build-frontend ]
-      - test-backend:
-          requires: [ build-backend ]
-      - scan-backend:
-          requires: [ build-backend ]
-      - scan-frontend:
-          requires: [ build-frontend ]
-      - deploy-infrastructure:
-          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
-          filters:
-            branches:
-              only:
-                - master
-      - configure-infrastructure:
-          requires: [ deploy-infrastructure ]
-#      - run-migrations:
-#          requires: [ configure-infrastructure ]
+#      - build-frontend
+#      - build-backend
+#      - test-frontend:
+#          requires: [ build-frontend ]
+#      - test-backend:
+#          requires: [ build-backend ]
+#      - scan-backend:
+#          requires: [ build-backend ]
+#      - scan-frontend:
+#          requires: [ build-frontend ]
+#      - deploy-infrastructure:
+#          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
+#          filters:
+#            branches:
+#              only:
+#                - master
+#      - configure-infrastructure:
+#          requires: [ deploy-infrastructure ]
+      - run-migrations:
+          requires: [ configure-infrastructure ]
 #      - deploy-frontend:
 #          requires: [ run-migrations ]
 #      - deploy-backend:

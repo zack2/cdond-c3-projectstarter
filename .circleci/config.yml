@@ -37,14 +37,18 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            # SUCCESS=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
-            # --request GET https://api.memstash.io/values/DB_MIGRATION_<< parameters.workflow_id >>)
-            SUCCESS=$(curl --insecure https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_<< parameters.workflow_id >>)
+            # curl --insecure https://kvdb.io/9QxtAGe3T4M1yaKYUvuYNr/migration_${CIRCLE_WORKFLOW_ID:0:7}  
+            SUCCESS=$(curl --insecure https://kvdb.io/9QxtAGe3T4M1yaKYUvuYNr/migration_${CIRCLE_WORKFLOW_ID:0:7})  
+            echo "$SUCCESS"
             if(( $SUCCESS==1 )); 
             then
-            cd backend
-            npm run migrations:revert
+                cd ~/project/backend
+                npm install
+              # Add revert code here. You can find this in the Getting Started section.
+                npm run migration:revert
+              #exit 1
             fi
+
 
 
 jobs:
@@ -215,7 +219,6 @@ jobs:
 
 
 
-
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
@@ -258,8 +261,8 @@ jobs:
             then
             # If you are using memstash.io, generate the token "7933fe63-4687-4fa1-8426-aa25aa1730ec" on the website
               #  curl -H "Content-Type: text/plain" -H "token: 7933fe63-4687-4fa1-8426-aa25aa1730ec" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID:0:7}
-            # If you are using kvdb.io, generate the bucket ID "9GE4jRtKznmVKRfvdBABBe" in your local terminal first
-                curl https://kvdb.io/UzY4EKVua5orQMZYbxQocR/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+            # If you are using kvdb.io, generate the bucket ID "9QxtAGe3T4M1yaKYUvuYNr" in your local terminal first
+                curl https://kvdb.io/9QxtAGe3T4M1yaKYUvuYNr/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
             # exit 1
 
@@ -414,24 +417,24 @@ jobs:
 workflows:
   default:
     jobs:
-      #      - build-frontend
-      #      - build-backend
-      #      - test-frontend:
-      #          requires: [ build-frontend ]
-      #      - test-backend:
-      #          requires: [ build-backend ]
-      #      - scan-backend:
-      #          requires: [ build-backend ]
-      #      - scan-frontend:
-      #          requires: [ build-frontend ]
-      #      - deploy-infrastructure:
-      #          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
-      #          filters:
-      #            branches:
-      #              only:
-      #                - master
-      #      - configure-infrastructure:
-      #          requires: [ deploy-infrastructure ]
+      - build-frontend
+      - build-backend
+      - test-frontend:
+          requires: [ build-frontend ]
+      - test-backend:
+          requires: [ build-backend ]
+      - scan-backend:
+          requires: [ build-backend ]
+      - scan-frontend:
+          requires: [ build-frontend ]
+      - deploy-infrastructure:
+          requires: [ test-frontend, test-backend, scan-frontend, scan-backend ]
+          filters:
+            branches:
+              only:
+                - master
+      - configure-infrastructure:
+          requires: [ deploy-infrastructure ]
       - run-migrations:
           requires: [ configure-infrastructure ]
 #      - deploy-frontend:

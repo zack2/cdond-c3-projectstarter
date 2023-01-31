@@ -339,12 +339,61 @@ jobs:
       #  Here's where you will add some code to rollback on failure
 
 
+#  deploy-backend:
+#    docker:
+#      - image: cimg/base:stable
+#    steps:
+#      - checkout
+#      - install_awscli
+#      - install_ansible
+#      - install_nodejs
+#      - add_ssh_keys:
+#          fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
+#      - attach_workspace:
+#          at: ~/
+#      - restore_cache:
+#          keys: [ backend-deps ]
+#      - run:
+#          name: Install dependencies
+#          command: |
+#            cd backend
+#            npm install
+#      - run:
+#          name: Package Backend
+#          command: |
+#            cd backend
+#            npm run build
+#            tar -czf artifact.tar.gz dist/* package*
+#            cd ..
+#            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+#      - run:
+#          name: Deploy Backend
+#          command: |
+#            export TYPEORM_MIGRATIONS_DIR=./migrations
+#            export TYPEORM_ENTITIES=./modules/domain/*/.entity{.ts,.js}
+#            export TYPEORM_MIGRATIONS_DIR=./migrations/*.ts
+#            cd .circleci/ansible
+#            cat inventory.txt
+#            ansible-playbook -i inventory.txt deploy-backend.yml
+#      - destroy-environment
+#      - revert-migrations
+
+
+
   deploy-backend:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/python:3.10
     steps:
       - checkout
-      - install_awscli
+      - run: sudo apt-get install tar gzip -y
+      - run:
+          name: Install aws_cli
+          command: |
+            #test
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
       - install_ansible
       - install_nodejs
       - add_ssh_keys:
@@ -352,33 +401,34 @@ jobs:
       - attach_workspace:
           at: ~/
       - restore_cache:
-          keys: [ backend-deps ]
+          keys: [ backend-build ]
       - run:
-          name: Install dependencies
+          name: npm install
           command: |
             cd backend
             npm install
       - run:
-          name: Package Backend
+          name: Package backend
           command: |
             cd backend
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
-            cd ..
+            tar -czvf artifact.tar.gz dist/* package*
+            cd .. 
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+
       - run:
-          name: Deploy Backend
+          name: Deploy backend
           command: |
             export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/*/.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS_DIR=./migrations/*.ts
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
             cd .circleci/ansible
+            echo "Contents  of the inventory file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
+
       - destroy-environment
       - revert-migrations
-
-
 
 
   smoke-test:

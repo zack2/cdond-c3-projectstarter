@@ -193,6 +193,7 @@ jobs:
 
 
 
+
   run-migrations:
     docker:
       - image: circleci/node:13.8.0
@@ -404,11 +405,11 @@ workflows:
                 - master
       - configure-infrastructure:
           requires: [ deploy-infrastructure ]
-      - run-migrations:
-          requires: [ configure-infrastructure ]
-      - deploy-frontend:
-          requires: [ run-migrations ]
-      - deploy-backend:
-          requires: [ run-migrations ]
-      - smoke-test:
-          requires: [ deploy-backend, deploy-frontend ]
+#      - run-migrations:
+#          requires: [ configure-infrastructure ]
+#      - deploy-frontend:
+#          requires: [ run-migrations ]
+#      - deploy-backend:
+#          requires: [ run-migrations ]
+#      - smoke-test:
+#          requires: [ deploy-backend, deploy-frontend ]

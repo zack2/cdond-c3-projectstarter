@@ -36,7 +36,7 @@ commands:
         - run:
             name: Install nodejs 13
             command: |
-              curl fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+              #curl fsSL https://deb.nodesource.com/setup_13.x | sudo -E bash -
               sudo apt install -y nodejs
 
   destroy-environment:
@@ -339,88 +339,47 @@ jobs:
       #  Here's where you will add some code to rollback on failure
 
 
-#  deploy-backend:
-#    docker:
-#      - image: cimg/base:stable
-#    steps:
-#      - checkout
-#      - install_awscli
-#      - install_ansible
-#      - install_nodejs
-#      - add_ssh_keys:
-#          fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
-#      - attach_workspace:
-#          at: ~/
-#      - restore_cache:
-#          keys: [ backend-deps ]
-#      - run:
-#          name: Install dependencies
-#          command: |
-#            cd backend
-#            npm install
-#      - run:
-#          name: Package Backend
-#          command: |
-#            cd backend
-#            npm run build
-#            tar -czf artifact.tar.gz dist/* package*
-#            cd ..
-#            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-#      - run:
-#          name: Deploy Backend
-#          command: |
-#            export TYPEORM_MIGRATIONS_DIR=./migrations
-#            export TYPEORM_ENTITIES=./modules/domain/*/.entity{.ts,.js}
-#            export TYPEORM_MIGRATIONS_DIR=./migrations/*.ts
-#            cd .circleci/ansible
-#            cat inventory.txt
-#            ansible-playbook -i inventory.txt deploy-backend.yml
-#      - destroy-environment
-#      - revert-migrations
-
-
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
+      - install_ansible
+      - install_nodejs
       - add_ssh_keys:
           fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
       - attach_workspace:
           at: ~/
       - restore_cache:
-          keys: [ backend-build ]
+          keys: [ backend-deps ]
       - run:
           name: Install dependencies
           command: |
-            apk add --update tar gzip ansible nodejs npm curl openssh-client
-            pip install awscli
+            cd backend
+            npm install
       - run:
-          name: Deploy backend
-          no_output_timeout: 30m
+          name: Package Backend
           command: |
             cd backend
-            touch .env
-            echo ENVIRONMENT=production > ".env"
-            echo TYPEORM_CONNECTION=postgres >> ".env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> ".env"
-            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> ".env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> ".env"
-            echo NODE_ENV=production >> ".env"
-            echo TYPEORM_HOST=$TYPEORM_HOST >> ".env"
-            echo TYPEORM_PORT=$TYPEORM_PORT >> ".env"
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ".env"
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ".env"
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ".env"
-            npm i
             npm run build
+            tar -czf artifact.tar.gz dist/* package*
             cd ..
-            tar -C backend -czvf backend_artifact.tar.gz . && \
-            cd .circleci/ansible && \
-            export ANSIBLE_HOST_KEY_CHECKING=False && \
-            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/deploy-backend.yml
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+      - run:
+          name: Deploy Backend
+          command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/*/.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS_DIR=./migrations/*.ts
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
       - revert-migrations
+
+
+
 
   smoke-test:
     docker:

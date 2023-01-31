@@ -1,0 +1,22 @@
+- name: "Copy the Compiled backend Files to EC2 instance"
+  copy:
+    src: /root/project/backend.tar.gz
+    dest: /home/ubuntu
+
+- name: "unarchive the dist directory"
+  unarchive:
+    src: /home/ubuntu/backend.tar.gz
+    dest: /home/ubuntu
+    copy: no
+
+- name: "Install Dependencies"
+  shell: |
+    cd /home/ubuntu/backend
+    sudo apt-get install -y npm
+
+
+- name: "Run the backend app"
+  shell: |
+    cd /home/ubuntu/backend
+    npx pm2 start npm --name backend -- start
+    npx pm2 ls

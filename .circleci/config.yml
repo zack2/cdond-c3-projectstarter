@@ -329,6 +329,60 @@ jobs:
       - revert-migrations:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+
+  smoke-test:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install dependencies
+          working_directory: /tmp
+          command: |
+            apk --no-cache add curl
+            apk update
+            pip install awscli
+
+      - run:
+          name: test backend smoke test
+          command: |
+            URL="http://google.com/"
+            if curl -s --head ${URL} 
+            then
+              return 0
+            else
+              return 1
+            fi
+      - run:
+          name: Frontend smoke test.
+          command: |
+            cd frontend
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"            
+            echo ${URL} 
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 0
+            else
+              return 1
+            fi
+      - run:
+          name: Save Frontend S3 bucket URL
+          command: |
+            cd frontend
+            touch URL02.txt
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            echo ${URL} > URL02.txt
+            cat URL02.txt
+
+      - destroy_environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
+
+      - revert-migrations:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
+
 workflows:
   default:
     jobs:
@@ -348,7 +402,13 @@ workflows:
             branches:
               only:
                 - master
-#      - configure-infrastructure:
-#          requires: [ deploy-infrastructure ]
-#      - run-migrations:
-#          requires: [ configure-infrastructure ]
+      - configure-infrastructure:
+          requires: [ deploy-infrastructure ]
+      - run-migrations:
+          requires: [ configure-infrastructure ]
+      - deploy-frontend:
+          requires: [ run-migrations ]
+      - deploy-backend:
+          requires: [ run-migrations ]
+      - smoke-test:
+          requires: [ deploy-backend, deploy-frontend ]

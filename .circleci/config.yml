@@ -382,51 +382,40 @@ jobs:
 
   deploy-backend:
     docker:
-      - image: cimg/python:3.10
+      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.16
     steps:
+      # Checkout code from git
       - checkout
-      - run: sudo apt-get install tar gzip -y
-      - run:
-          name: Install aws_cli
-          command: |
-            #test
-            sudo apt-get update && sudo apt-get install -yy less
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - install_ansible
-      - install_nodejs
+      # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
-      - attach_workspace:
-          at: ~/
+      # attach workspace
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update --no-cache tar gzip nodejs npm aws-cli ansible
       - restore_cache:
           keys: [ backend-build ]
-      - run:
-          name: npm install
-          command: |
-            cd backend
-            npm install
-      - run:
-          name: Package backend
-          command: |
-            cd backend
-            npm run build
-            tar -czvf artifact.tar.gz dist/* package*
-            cd .. 
-            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
-
+      # attach workspace
+      - attach_workspace:
+          at: ~/
       - run:
           name: Deploy backend
           command: |
-            export TYPEORM_MIGRATIONS_DIR=./migrations
-            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
-            export TYPEORM_MIGRATIONS=./migrations/*.ts
+            cd backend
+            npm i
+            npm run build 
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
+            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
             cd .circleci/ansible
-            echo "Contents  of the inventory file is -------"
+            echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-
+      # Here's where you will add some code to rollback on failure
       - destroy-environment
       - revert-migrations
 

@@ -275,19 +275,10 @@ jobs:
           name: Run migrations
           command: |
             cd backend
-            # npm install package_name             
-            # npx npm-check-updates
-            npm install
-            # npm run build
-            # npm run migrations
-            # npm fund
-            npm audit fix --audit-level=critical --force
-            # cd /home/circleci/.npm/_logs
-            # npm install 2022-10-14T14_48_54_316Z-debug.log
-            npm install
+            npm install --no-audit --no-fund
+            #npm audit fix --audit-level=critical --force
             npm run migrations > migrations_dump.txt
-            # Your code here
-            # exit 1
+
       - run:
           name: Send migration results to memstash
           command: |

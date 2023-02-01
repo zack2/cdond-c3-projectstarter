@@ -505,30 +505,11 @@ jobs:
             --tags project=udapeople
             # your code here
       - revert-migrations
+      - remove-bucket-contents
+      - destroy-environment
       #  Here's where you will add some code to rollback on failure
 
-    # cleanup:
-    #   docker:
-    #       # Docker image here
-    #     - image: amazon/aws-cli
-    #   steps:
-    #     # Checkout code from git
-    #     - checkout
-    #     - run:
-    #          name: Remove old stacks and files
-    #          command: |
-    #            export STACKS=($(aws cloudformation list-stacks \
-    #                --query "StackSummaries[*].StackName" \
-    #                --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-    #            echo Stack names: "${STACKS[@]}"
-    #            export OldWorkflowID=$(curl --insecure https://kvdb.io/9QxtAGe3T4M1yaKYUvuYNr/old_workflow_id)
-    #            echo Old Workflow ID: $OldWorkflowID
-    #            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-    #            then
-    #              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
-    #              aws cloudformation delete-stack --stack-name "backend-${OldWorkflowID}"
-    #              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowID}"
-    #            fi
+
 
   cleanup:
     docker:

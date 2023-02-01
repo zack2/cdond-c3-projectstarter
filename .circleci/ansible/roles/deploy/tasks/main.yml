@@ -1,9 +1,9 @@
-#---
-#- name: "Creates backend app directory"
-#  file:
-#    path: /home/ubuntu/backend-app
-#    state: directory
-#
+---
+- name: "Creates backend app directory"
+  file:
+    path: /home/ubuntu/backend-app
+    state: directory
+
 - name: "Unarchive backend files"
   unarchive:
     src: artifact.tar.gz

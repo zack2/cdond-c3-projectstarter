@@ -362,6 +362,7 @@ jobs:
           name: Package Backend
           command: |
             cd backend
+            sudo apt install npm
             npm run build
             tar -czf artifact.tar.gz dist/* package*
             cd ..

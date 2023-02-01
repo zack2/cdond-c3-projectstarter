@@ -9,6 +9,10 @@
     src: artifact.tar.gz
     dest: /home/ubuntu/backend-app
 
+- name: "Installing npm"
+  shell: |
+    sudo apt install npm
+
 - name: "Installing Node Dependencies"
   shell: |
     cd /home/ubuntu/backend-app

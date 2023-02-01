@@ -17,11 +17,11 @@
   shell: |
     cd /home/ubuntu/backend-app/dist
     export TYPEORM_ENTITIES="./modules/domain/**/*.entity.js"
-    export TYPEORM_HOST=udapeople-prod.cfnvu6himdrq.us-east-1.rds.amazonaws.com
+    export TYPEORM_HOST=glee.czzhzdnugo6g.us-east-1.rds.amazonaws.com
     export TYPEORM_PORT=5432
     export TYPEORM_USERNAME=postgres
-    export TYPEORM_PASSWORD=01278793940
-    export TYPEORM_DATABASE=udapeople_prod
+    export TYPEORM_PASSWORD=password
+    export TYPEORM_DATABASE=glee
     export TYPEORM_MIGRATIONS_DIR=./migrations
     export TYPEORM_MIGRATIONS=./migrations/*.js
     pm2 stop default

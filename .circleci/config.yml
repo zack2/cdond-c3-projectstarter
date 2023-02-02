@@ -378,13 +378,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - run:
-          name: Install AWS CLI v2
-          command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-
+      - install_awscli
       - install_ansible
       - install_nodejs
       - add_ssh_keys:
@@ -403,7 +397,7 @@ jobs:
           command: |
             cd backend
             npm run build
-            tar -czf artifact.tar.gz dist/* package*
+            tar -czvf artifact.tar.gz dist/* package*
 
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files

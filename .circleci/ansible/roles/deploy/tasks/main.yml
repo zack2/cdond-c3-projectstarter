@@ -31,25 +31,58 @@
 #  shell: |
 #    sudo su -c "env PATH=$PATH:/usr/local/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu"
 #    pm2 save
-- name: Update
-  become: yes
-  apt:
-    update_cache: yes
+#
+#- name: Update
+#  become: yes
+#  apt:
+#    update_cache: yes
+#
+#- name: "upgrade packages"
+#  become: yes
+#  apt:
+#    upgrade: yes
+#
+#- name: Unarchive files
+#  become: yes
+#  unarchive:
+#    src: "backen/artifact.tar.gz"
+#    dest: .
+#
+#- name: "Start application"
+#  become: yes
+#  shell: |
+#    npm install
+#    pm2 stop default
+#    pm2 start npm -- start
 
-- name: "upgrade packages"
-  become: yes
-  apt:
-    upgrade: yes
+- name: "Creates backend app directory"
+  file:
+    path: ~/backend-app
+    state: directory
 
-- name: Unarchive files
-  become: yes
+- name: "Unarchive backend files"
   unarchive:
-    src: "backend/artifact.tar.gz"
-    dest: .
+    src: artifact.tar.gz
+    dest: ~/backend-app
 
-- name: "Start application"
-  become: yes
+- name: "Installing Node Dependencies"
   shell: |
-    npm install
+    cd ~/backend-app
+    npm i
+
+- name: "Executing Node app with PM2"
+  shell: |
+    cd ~/backend-app/dist
     pm2 stop default
-    pm2 start npm -- start
+    pm2 start main.js
+  register: execute_node
+
+- name: print message
+  debug:
+    msg: "{{ execute_node.stdout_lines }}"
+
+- name: "Configure pm2 to start as service"
+  become: true
+  shell: |
+    sudo su -c "env PATH=$PATH:/usr/local/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu"
+    pm2 save

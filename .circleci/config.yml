@@ -245,25 +245,25 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: amazon/aws-cli
       # Docker image here that supports Ansible
     steps:
-
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y gcc libffi-devel python3 epel-release && \
+            yum install -y python3-pip && \
+            yum install -y wget && \
+            yum clean all && \
+            yum update -y && \
+            yum install -y tar gzip curl unzip openssh-server openssh-clients && \
+            python3 -m pip install ansible
+
       - add_ssh_keys:
           fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ] # You can get this ID in the section where you registered the SSH Key
       - attach_workspace:
           at: ~/
-
-      - run:
-          name: Install dependencies
-          command: |
-            # Your code here
-            apk add --update ansible 
-            # yum -y install tar gzip
-            # npm install
-            #   exit 1
-
       - run:
           name: Configure server
           command: |

@@ -427,9 +427,9 @@ jobs:
       - attach_workspace:
           at: ~/
 
-      - install_awscli
-      - install_ansible
-      - install_nodejs
+#      - install_awscli
+#      - install_ansible
+#      - install_nodejs
       - run:
           name: View content of inventory.txt
           command: cat .circleci/ansible/inventory.txt

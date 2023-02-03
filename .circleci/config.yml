@@ -426,10 +426,6 @@ jobs:
           fingerprints: [ "9d:47:b2:62:8b:77:ee:f1:49:e2:03:10:75:1f:cd:44" ]
       - attach_workspace:
           at: ~/
-
-#      - install_awscli
-#      - install_ansible
-#      - install_nodejs
       - run:
           name: View content of inventory.txt
           command: cat .circleci/ansible/inventory.txt
@@ -450,7 +446,7 @@ jobs:
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml -vv
+            ansible-playbook -i inventory.txt deploy-backend.yml
       - destroy-environment
       - revert-migrations
 

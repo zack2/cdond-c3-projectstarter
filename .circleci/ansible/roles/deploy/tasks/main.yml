@@ -2,28 +2,28 @@
 
 - name: "Creates backend app directory"
   file:
-    path: ~/ubuntu/backend
+    path: /home/ubuntu/backend
     state: directory
 
 - name: "Unarchive backend files"
   unarchive:
-    src: artifact.tar.gz
-    dest: ~/ubuntu/backend
+    src: files/artifact.tar.gz
+    dest: home/ubuntu/backend
 
 - name: "Installing Node Dependencies"
   shell: |
-    cd ~/ubuntu/backend
+    cd /home/ubuntu/backend
     sudo npm i
 
 - name: "Executing Node app with PM2"
   shell: |
-    cd ~/ubuntu/backend/dist
+    cd /home/ubuntu/backend/dist
     export TYPEORM_ENTITIES="./modules/domain/**/*.entity.js"
     export TYPEORM_HOST=glee.czzhzdnugo6g.us-east-1.rds.amazonaws.com
     export TYPEORM_PORT=5432
     export TYPEORM_USERNAME=postgres
     export TYPEORM_PASSWORD=password
-    export TYPEORM_DATABASE=udapeople_prod
+    export TYPEORM_DATABASE=glee
     export TYPEORM_MIGRATIONS_DIR=./migrations
     export TYPEORM_MIGRATIONS=./migrations/*.js
     pm2 stop default

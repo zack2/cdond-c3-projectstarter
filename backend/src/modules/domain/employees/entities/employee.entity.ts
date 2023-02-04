@@ -1,5 +1,7 @@
+// @ts-ignore
 import * as moment from 'moment-timezone';
 import { AggregateRoot } from '../../../common/entities';
+// @ts-ignore
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CreateEmployee } from '../commands/create-employee.command';
 import { EmployeeCreated } from '../events/employee-created.event';

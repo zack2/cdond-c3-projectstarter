@@ -443,7 +443,6 @@ jobs:
             fi
       # Here's where you will add some code to rollback on failure
       - revert-migrations
-      - remove-bucket-contents
       - destroy-environment
 
 
@@ -478,8 +477,8 @@ jobs:
             --tags project=udapeople
             # your code here
       - revert-migrations
-      - remove-bucket-contents
-      - destroy-environment
+      #- remove-bucket-contents
+      #- destroy-environment
       #  Here's where you will add some code to rollback on failure
 
 
@@ -549,5 +548,5 @@ workflows:
           requires: [ deploy-backend, deploy-frontend ]
       - cloudfront-update:
           requires: [ smoke-test ]
-      - cleanup:
-          requires: [ cloudfront-update ]
+#      - cleanup:
+#          requires: [ cloudfront-update ]

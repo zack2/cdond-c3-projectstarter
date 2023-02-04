@@ -1,5 +1,5 @@
 URL01="https://github.com/zack2/cdond-c3-projectstarter"
 URL02="http://udapeople-7ece141.s3-website-us-east-1.amazonaws.com"
 URL03="d39u2jn1jbruov.cloudfront.net"
-URL04=""
+URL04="https://ec2-54-175-145-84.compute-1.amazonaws.com:3030/api/status"
 URL05="http://ec2-3-86-110-127.compute-1.amazonaws.com:9090/"
